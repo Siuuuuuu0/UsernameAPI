@@ -12,7 +12,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:3500"]}})
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:3500", None]}})
 
 # Подключение к MongoDB
 client = MongoClient(os.getenv('DATABASE_URI'))
