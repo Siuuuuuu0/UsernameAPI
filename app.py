@@ -12,8 +12,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:3500"]}})
-# CORS(app, resources={r"/*": {"origins": "*"}})
+# CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:3500"]}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Подключение к MongoDB
 client = MongoClient(os.getenv('DATABASE_URI'))
@@ -60,11 +60,23 @@ for username in existing_usernames:
     bloom_filter.add(username)
     # added_usernames.append(username)
 
-def generate_custom_username(first_name, last_name):
-    base_username = (first_name[:2] + last_name[:2]).lower()
+def generate_custom_username_1(first_name, last_name):
+    base_username = (first_name[:3] + last_name[:3]).lower()
     numbers = ''.join(random.choices(string.digits, k=3))
     special_chars = ''.join(random.choices('!#$%^&*', k=2))
     return base_username + numbers + special_chars
+
+def generate_custom_username_2(first_name, last_name):
+    base_username = (first_name+last_name).lower()
+    numbers = ''.join(random.choices(string.digits, k=3))
+    special_chars = ''.join(random.choices('!#$%^&*', k=2))
+    return base_username + numbers + special_chars
+
+def generate_custom_username_3(first_name, last_name):
+    base_username = (last_name[:3]).lower()
+    numbers = ''.join(random.choices(string.digits, k=3))
+    end_username = (first_name[:3]).lower()
+    return base_username + numbers + end_username
 
 def is_username_unique(username):
     # if username in bloom_filter:
@@ -72,7 +84,7 @@ def is_username_unique(username):
     # return True
     return not (username in bloom_filter)
 
-@app.route('/generate_username', methods=['POST'])
+@app.route('/generate_usernames', methods=['POST'])
 def generate_username_endpoint():
     data = request.get_json()
     first_name = data.get('first_name')
@@ -80,11 +92,19 @@ def generate_username_endpoint():
     if not first_name or not last_name:
         return jsonify({'error': 'Invalid input'}), 400
     
-    username = generate_custom_username(first_name, last_name)
-    while not is_username_unique(username):
-        username = generate_custom_username(first_name, last_name)
+    username1 = generate_custom_username_1(first_name, last_name)
+    while not is_username_unique(username1):
+        username1 = generate_custom_username_1(first_name, last_name)
+
+    username2 = generate_custom_username_2(first_name, last_name)
+    while not is_username_unique(username2):
+        username2 = generate_custom_username_2(first_name, last_name)
+
+    username3 = generate_custom_username_3(first_name, last_name)
+    while not is_username_unique(username3):
+        username2 = generate_custom_username_3(first_name, last_name)
     
-    return jsonify({'username': username}), 200
+    return jsonify({'usernames': {'username1' : username1, 'username2' : username2, 'username3' : username3}}), 200
 
 @app.route('/add_username', methods=['POST'])
 def add_username_endpoint():
