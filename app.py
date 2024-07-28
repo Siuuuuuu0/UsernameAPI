@@ -12,7 +12,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:3500", None]}})
+# CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:3500"]}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Подключение к MongoDB
 client = MongoClient(os.getenv('DATABASE_URI'))
@@ -36,7 +37,7 @@ class MultiBloomFilter:
         self.filters = [BloomFilter(capacity=initial_capacity, error_rate=error_rate)]
     
     def add(self, item):
-        # Если первый фильтр переполнен, добавляем новый
+        # Если послений в очереди фильтр переполнен, добавляем новый
         if not self.filters[0].add(item):
             self.filters.append(BloomFilter(capacity=len(self.filters[0]), error_rate=0.001))
             self.filters[-1].add(item)
@@ -50,11 +51,12 @@ class MultiBloomFilter:
 bloom_filter = MultiBloomFilter(initial_capacity=10000, error_rate=0.001)
 
 # added_nicknames = []
+# тестировка добавления
 
 # Заполнение Bloom фильтра существующими никнеймами
 existing_usernames = users_collection.distinct('username')
 for username in existing_usernames:
-    print(username)
+    # print(username)
     bloom_filter.add(username)
     # added_usernames.append(username)
 
@@ -68,7 +70,7 @@ def is_username_unique(username):
     # if username in bloom_filter:
     #     return users_collection.find_one({"username": username}) is None
     # return True
-    return username in bloom_filter
+    return not (username in bloom_filter)
 
 @app.route('/generate_username', methods=['POST'])
 def generate_username_endpoint():
@@ -90,7 +92,12 @@ def add_username_endpoint():
     username = data.get('username')
     if not username : 
         return jsonify({'error' : 'no username provided'}), 400
+    
+    if not is_username_unique(username) : 
+        return jsonify({"error" : "username in use"}), 400
+
     bloom_filter.add(username)
+    
     # added_usernames.append(username)
     # for username in added_usernames:
     #     print(username)
