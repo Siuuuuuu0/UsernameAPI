@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from pybloom_live import BloomFilter
 from dotenv import load_dotenv
+from flask_cors import CORS
 import random
 import string
 import os
@@ -10,6 +11,8 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
+
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://localhost:3500"]}})
 
 # Подключение к MongoDB
 client = MongoClient(os.getenv('DATABASE_URI'))
